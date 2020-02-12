@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include "sim.h"
 #include "nrf.h"
+//#include "rgbled.h"
 
 using BearSSL::X509List;
 using BearSSL::PrivateKey;
@@ -246,6 +247,7 @@ void messageReceived(String &topic, String &payload)
 
 void setup()
 {
+  //rgb_mode.no_color();
   WiFi.mode(WIFI_OFF);
   Serial.begin(9600);
   sim.check();
@@ -372,6 +374,7 @@ void connect_internet()
   connected_wifi = wifispot.get_connected_wifi(10);
   if (connected_wifi.first == "")
   {
+    //rgb_mode.blue();
     if (WiFi.getMode() != WIFI_AP_STA)
     {
       //Serial.println("hotspot");
@@ -380,6 +383,7 @@ void connect_internet()
   }
   else
   {
+    //rgb_mode.green();
     //Serial.print("wifi= ");
     //Serial.print(connected_wifi.first);
     //Serial.print("  password= ");
@@ -418,7 +422,8 @@ void emergency_loop(const char *filename, const char *sensor_name)
     {
       for (uint8_t i = 0; i < receive_doc.size(); i++)
       {
-        if(sim.call(receive_doc[i], 30)){
+        if (sim.call(receive_doc[i], 30))
+        {
           break;
         }
       }
@@ -435,10 +440,11 @@ void emergency_loop(const char *filename, const char *sensor_name)
   {
     for (uint8_t i = 0; i < receive_doc.size(); i++)
     {
-           if(sim.call(receive_doc[i], 30)){
-          break;
-        }
-          }
+      if (sim.call(receive_doc[i], 30))
+      {
+        break;
+      }
+    }
     for (uint8_t i = 0; i < receive_doc.size(); i++)
     {
       sim.msg(receive_doc[i], 60, content.c_str());
@@ -465,7 +471,7 @@ void _loop()
       send_doc.clear();
     }*/
   check_msg();
-  if (sim.send_at("AT+CSPN?", 2, false).indexOf("ERROR") > -1&& sim_state==true)
+  if (sim.send_at("AT+CSPN?", 2, false).indexOf("ERROR") > -1 && sim_state == true)
   {
     String response;
     JsonObject reported = send_doc.createNestedObject(STATE_TAG).createNestedObject(REPORTED_TAG);
@@ -475,7 +481,7 @@ void _loop()
     client.publish(PUB_UPDATE, response, 0, 1);
     send_doc.clear();
   }
-  else if (sim.send_at("AT+CSPN?", 2, false).indexOf("OK") > -1&& sim_state==false)
+  else if (sim.send_at("AT+CSPN?", 2, false).indexOf("OK") > -1 && sim_state == false)
   {
     String response;
     JsonObject reported = send_doc.createNestedObject(STATE_TAG).createNestedObject(REPORTED_TAG);
@@ -586,15 +592,21 @@ void nrf_check()
       {
         emergency_loop(AUTO_NUM_FILE, "VIBRATION");
       }
-          if (nrf_data == 'B')
-    {
-      emergency_loop(AUTO_NUM_FILE, "BUTTON");
+      if (nrf_data == 'B')
+      {
+        emergency_loop(AUTO_NUM_FILE, "BUTTON");
+      }
     }
-    return;
-    }
-    if (nrf_data == 'B')
+    else
     {
-      emergency_loop(MAN_NUM_FILE, "BUTTON");
+      if (nrf_data == 'B')
+      {
+        emergency_loop(MAN_NUM_FILE, "BUTTON");
+      }
+      if (nrf_data == 'V' || nrf_data == 'D' || nrf_data == 'I')
+      {
+        nrf_mode();
+      }
     }
   }
 }
